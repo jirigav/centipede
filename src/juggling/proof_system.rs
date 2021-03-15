@@ -15,8 +15,8 @@ version 3 of the License, or (at your option) any later version.
 @license GPL-3.0+ <https://github.com/KZen-networks/centipede/blob/master/LICENSE>
 */
 use curv::BigInt;
-use curv::elliptic::curves::secp256_k1::GE;
-use curv::elliptic::curves::secp256_k1::FE;
+use curv::elliptic::curves::p256::GE;
+use curv::elliptic::curves::p256::FE;
 use curv::cryptographic_primitives::proofs::sigma_correct_homomorphic_elgamal_encryption_of_dlog::{HomoELGamalDlogProof,HomoElGamalDlogWitness,HomoElGamalDlogStatement};
 use curv::cryptographic_primitives::proofs::sigma_correct_homomorphic_elgamal_enc::{HomoELGamalProof,HomoElGamalWitness,HomoElGamalStatement};
 use curv::cryptographic_primitives::hashing::hash_sha512::HSha512;
@@ -51,16 +51,16 @@ pub struct Witness {
 #[derive(Serialize, Deserialize)]
 pub struct Proof {
     pub bulletproof: RangeProof,
-    pub elgamal_enc: Vec<HomoELGamalProof<curv::elliptic::curves::secp256_k1::GE>>,
-    pub elgamal_enc_dlog: HomoELGamalDlogProof<curv::elliptic::curves::secp256_k1::GE>,
+    pub elgamal_enc: Vec<HomoELGamalProof<curv::elliptic::curves::p256::GE>>,
+    pub elgamal_enc_dlog: HomoELGamalDlogProof<curv::elliptic::curves::p256::GE>,
 }
 
 impl Proof {
     pub fn prove(
         w: &Witness,
         c: &Helgamalsegmented,
-        G: &curv::elliptic::curves::secp256_k1::GE,
-        Y: &curv::elliptic::curves::secp256_k1::GE,
+        G: &curv::elliptic::curves::p256::GE,
+        Y: &curv::elliptic::curves::p256::GE,
         segment_size: &usize,
     ) -> Proof {
         // bulletproofs:
@@ -303,8 +303,8 @@ impl Proof {
 
 #[cfg(test)]
 mod tests {
-    use curv::elliptic::curves::secp256_k1::FE;
-    use curv::elliptic::curves::secp256_k1::GE;
+    use curv::elliptic::curves::p256::FE;
+    use curv::elliptic::curves::p256::GE;
     use curv::elliptic::curves::traits::*;
     use juggling::proof_system::*;
     use juggling::segmentation::Msegmentation;

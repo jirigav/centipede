@@ -11,8 +11,8 @@ use juggling::proof_system::Witness;
 use juggling::segmentation::Msegmentation;
 use Errors;
 use Errors::ErrorSegmentNum;
-type GE = curv::elliptic::curves::secp256_k1::GE;
-type FE = curv::elliptic::curves::secp256_k1::FE;
+type GE = curv::elliptic::curves::p256::GE;
+type FE = curv::elliptic::curves::p256::FE;
 
 const SECRET_BIT_LENGTH: usize = 256;
 
@@ -31,14 +31,14 @@ pub struct FirstMessage {
     pub range_proof: RangeProof,
     pub Q: GE,
     pub E: GE,
-    pub dlog_proof: HomoELGamalDlogProof<curv::elliptic::curves::secp256_k1::GE>,
+    pub dlog_proof: HomoELGamalDlogProof<curv::elliptic::curves::p256::GE>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct SegmentProof {
     pub k: usize,
     pub E_k: GE,
-    pub correct_enc_proof: HomoELGamalProof<curv::elliptic::curves::secp256_k1::GE>,
+    pub correct_enc_proof: HomoELGamalProof<curv::elliptic::curves::p256::GE>,
 }
 
 impl VEShare {
@@ -136,7 +136,7 @@ impl VEShare {
 
 #[cfg(test)]
 mod tests {
-    type GE = curv::elliptic::curves::secp256_k1::GE;
+    type GE = curv::elliptic::curves::p256::GE;
 
     use curv::elliptic::curves::traits::*;
     use grad_release::VEShare;

@@ -20,7 +20,7 @@ const SECRETBITS: usize = 256;
 use std::ops::{Shl, Shr};
 
 use curv::arithmetic::traits::*;
-use curv::elliptic::curves::secp256_k1::{FE, GE};
+use curv::elliptic::curves::p256::{FE, GE};
 use curv::elliptic::curves::traits::*;
 use curv::BigInt;
 use juggling::proof_system::{Helgamal, Helgamalsegmented, Witness};
