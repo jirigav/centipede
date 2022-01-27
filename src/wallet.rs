@@ -16,22 +16,49 @@ version 3 of the License, or (at your option) any later version.
 */
 
 use curv::arithmetic::traits::*;
-use curv::elliptic::curves::secp256_k1::hash_to_curve::generate_random_point;
 use curv::BigInt;
 
 use curv::cryptographic_primitives::hashing::{Digest, DigestExt};
-use curv::elliptic::curves::{secp256_k1::Secp256k1, Point, Scalar};
+use curv::elliptic::curves::{p256::Secp256r1, Point, Scalar};
 use sha2::Sha256;
 
+//use curv::elliptic::curves::secp256_k1::hash_to_curve::generate_random_point;
+/*
+Takes uniformly distributed bytes and produces p256 point with unknown logarithm
+
+__Note:__ Temporary solution, hopefully will be removed soon
+*/
+const P256_PUBLIC_KEY_SIZE: usize = 33;
+pub fn generate_random_point(bytes: &[u8]) -> Point<Secp256r1> {
+        let compressed_point_len = P256_PUBLIC_KEY_SIZE;  //secp256k1::constants::PUBLIC_KEY_SIZE;
+        let truncated = if bytes.len() > compressed_point_len - 1 {
+            &bytes[0..compressed_point_len - 1]
+        } else {
+            &bytes
+        };
+        let mut buffer = [0u8; P256_PUBLIC_KEY_SIZE];
+        buffer[0] = 0x2;
+        buffer[1..1 + truncated.len()].copy_from_slice(truncated);
+        if let Ok(point) = Point::from_bytes(&buffer) {
+            return point;
+        }
+
+        let bn = BigInt::from_bytes(bytes);
+        let two = BigInt::from(2);
+        let bn_times_two = BigInt::mod_mul(&bn, &two, Scalar::<Secp256r1>::group_order());
+        let bytes = BigInt::to_bytes(&bn_times_two);
+        generate_random_point(&bytes)
+}
+
 pub struct SecretShare {
-    pub secret: Scalar<Secp256k1>,
-    pub pubkey: Point<Secp256k1>,
+    pub secret: Scalar<Secp256r1>,
+    pub pubkey: Point<Secp256r1>,
 }
 
 impl SecretShare {
     pub fn generate() -> SecretShare {
-        let base_point = Point::<Secp256k1>::generator();
-        let secret: Scalar<Secp256k1> = Scalar::<Secp256k1>::random();
+        let base_point = Point::<Secp256r1>::generator();
+        let secret: Scalar<Secp256r1> = Scalar::<Secp256r1>::random();
 
         let pubkey = base_point * &secret;
         SecretShare { secret, pubkey }
@@ -41,7 +68,7 @@ impl SecretShare {
     pub fn generate_randomness(&self, label: &BigInt) -> BigInt {
         let h = generate_random_point(&Converter::to_bytes(label));
         let gamma = h * &self.secret;
-        let beta: Scalar<Secp256k1> = Sha256::new().chain_points([&gamma]).result_scalar();
+        let beta: Scalar<Secp256r1> = Sha256::new().chain_points([&gamma]).result_scalar();
         beta.to_bigint()
     }
 }

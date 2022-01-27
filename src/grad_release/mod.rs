@@ -12,13 +12,13 @@ use sha2::Sha256;
 use Errors;
 use Errors::ErrorSegmentNum;
 
-use curv::elliptic::curves::{secp256_k1::Secp256k1, Point, Scalar};
+use curv::elliptic::curves::{p256::Secp256r1, Point, Scalar};
 
 const SECRET_BIT_LENGTH: usize = 256;
 
 #[derive(Serialize, Deserialize)]
 pub struct VEShare {
-    pub secret: Scalar<Secp256k1>,
+    pub secret: Scalar<Secp256r1>,
     pub segments: Witness,
     pub encryptions: Helgamalsegmented,
     pub proof: Proof,
@@ -27,27 +27,27 @@ pub struct VEShare {
 #[derive(Serialize, Deserialize)]
 pub struct FirstMessage {
     pub segment_size: usize,
-    pub D_vec: Vec<Point<Secp256k1>>,
+    pub D_vec: Vec<Point<Secp256r1>>,
     pub range_proof: RangeProof,
-    pub Q: Point<Secp256k1>,
-    pub E: Point<Secp256k1>,
-    pub dlog_proof: HomoELGamalDlogProof<Secp256k1, Sha256>,
+    pub Q: Point<Secp256r1>,
+    pub E: Point<Secp256r1>,
+    pub dlog_proof: HomoELGamalDlogProof<Secp256r1, Sha256>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct SegmentProof {
     pub k: usize,
-    pub E_k: Point<Secp256k1>,
-    pub correct_enc_proof: HomoELGamalProof<Secp256k1, Sha256>,
+    pub E_k: Point<Secp256r1>,
+    pub correct_enc_proof: HomoELGamalProof<Secp256r1, Sha256>,
 }
 
 impl VEShare {
     pub fn create(
-        secret: &Scalar<Secp256k1>,
-        encryption_key: &Point<Secp256k1>,
+        secret: &Scalar<Secp256r1>,
+        encryption_key: &Point<Secp256r1>,
         segment_size: &usize,
     ) -> (FirstMessage, Self) {
-        let G = Point::<Secp256k1>::generator();
+        let G = Point::<Secp256r1>::generator();
 
         let num_segments = SECRET_BIT_LENGTH / *segment_size; //TODO: asserty divisible or add segment
         let (segments, encryptions) = Msegmentation::to_encrypted_segments(
@@ -60,11 +60,11 @@ impl VEShare {
         let proof = Proof::prove(&segments, &encryptions, &G, encryption_key, segment_size);
 
         // first message:
-        let Q = Point::<Secp256k1>::generator() * secret;
-        let D_vec: Vec<Point<Secp256k1>> = (0..num_segments)
+        let Q = Point::<Secp256r1>::generator() * secret;
+        let D_vec: Vec<Point<Secp256r1>> = (0..num_segments)
             .map(|i| encryptions.DE[i].D.clone())
             .collect();
-        let E_vec: Vec<Point<Secp256k1>> = (0..num_segments)
+        let E_vec: Vec<Point<Secp256r1>> = (0..num_segments)
             .map(|i| encryptions.DE[i].E.clone())
             .collect();
         let E = Msegmentation::assemble_ge(&E_vec, segment_size);
@@ -99,7 +99,7 @@ impl VEShare {
 
     pub fn start_verify(
         first_message: &FirstMessage,
-        encryption_key: &Point<Secp256k1>,
+        encryption_key: &Point<Secp256r1>,
     ) -> Result<(), Errors> {
         Proof::verify_first_message(first_message, encryption_key)
     }
@@ -107,7 +107,7 @@ impl VEShare {
     pub fn verify_segment(
         first_message: &FirstMessage,
         segment: &SegmentProof,
-        encryption_key: &Point<Secp256k1>,
+        encryption_key: &Point<Secp256r1>,
     ) -> Result<(), Errors> {
         Proof::verify_segment(first_message, segment, encryption_key)
     }
@@ -115,8 +115,8 @@ impl VEShare {
     pub fn extract_secret(
         first_message: &FirstMessage,
         segment_proof_vec: &[SegmentProof],
-        decryption_key: &Scalar<Secp256k1>,
-    ) -> Result<Scalar<Secp256k1>, Errors> {
+        decryption_key: &Scalar<Secp256r1>,
+    ) -> Result<Scalar<Secp256r1>, Errors> {
         let len = segment_proof_vec.len();
         if len != first_message.D_vec.len() {
             return Err(ErrorSegmentNum);
@@ -133,7 +133,7 @@ impl VEShare {
 
         Msegmentation::decrypt(
             &encryptions,
-            &Point::<Secp256k1>::generator(),
+            &Point::<Secp256r1>::generator(),
             decryption_key,
             &first_message.segment_size,
         )
@@ -142,7 +142,7 @@ impl VEShare {
 
 #[cfg(test)]
 mod tests {
-    use curv::elliptic::curves::{secp256_k1::Secp256k1, Point, Scalar};
+    use curv::elliptic::curves::{p256::Secp256r1, Point, Scalar};
     use grad_release::VEShare;
     use grad_release::SECRET_BIT_LENGTH;
 
@@ -151,14 +151,14 @@ mod tests {
     fn test_secret_exchange() {
         let segment_size = 8;
         // secret generation
-        let secret_p1 = Scalar::<Secp256k1>::random();
-        let secret_p2 = Scalar::<Secp256k1>::random();
+        let secret_p1 = Scalar::<Secp256r1>::random();
+        let secret_p2 = Scalar::<Secp256r1>::random();
 
         // enc/dec key pairs generation
-        let p1_dec_key = Scalar::<Secp256k1>::random();
-        let p1_enc_key = Point::<Secp256k1>::generator() * p1_dec_key.clone();
-        let p2_dec_key = Scalar::<Secp256k1>::random();
-        let p2_enc_key = Point::<Secp256k1>::generator() * p2_dec_key.clone();
+        let p1_dec_key = Scalar::<Secp256r1>::random();
+        let p1_enc_key = Point::<Secp256r1>::generator() * p1_dec_key.clone();
+        let p2_dec_key = Scalar::<Secp256r1>::random();
+        let p2_enc_key = Point::<Secp256r1>::generator() * p2_dec_key.clone();
 
         // p1 sends first message to p2
         let (p1_first_message, p1_ve_share) =
